@@ -1,0 +1,83 @@
+{{ '//code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css' | stylesheet_tag }}
+{{ '//ajax.googleapis.com/ajax/libs/jquery/2.2.3/jquery.min.js' | script_tag }}
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+
+
+<!-- <div style="width:300px; clear:both;">
+  <p>
+    <label for="date">Pick a delivery date:</label>
+    <input id="date" type="text" name="attributes[date]" value="{{ cart.attributes.date }}" />
+    <div class="hide excluded_dates_cover">
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+           {%- when 'text' -%}
+          =={{ block.settings.excluded_dates }}
+          {% endcase %}
+          {% endfor %}
+    </div>
+    <span style="display:block" class="instructions"> We do not deliver during the weekend.</span>
+  </p>
+</div> -->
+
+<div style="width:300px; clear:both;">
+  <p>
+    <label for="date">Pick a delivery date:</label>
+    <input id="date" type="text" name="attributes[date]" value="{{ cart.attributes.date }}" />
+      <div class="hide excluded_dates_cover">
+        {%- for block in section.blocks -%}
+          {%- case block.type -%}
+             {%- when 'text' -%}
+                {% assign excluded_dates_array = block.settings.excluded_dates | split: "," %}
+             {% endcase %}
+            {% endfor %}
+      </div>
+    <span style="display:block" class="instructions"> We do not deliver during the weekend.</span>
+  </p>
+</div>
+
+<script>
+
+  $(document).ready(function() {
+    $('#date').datepicker({
+        beforeShowDay: function(date) {
+            var day = date.getDay();
+            var currentDate = new Date();
+            var currentDay = currentDate.getDay();
+            var currentHour = currentDate.getHours();
+            var dateString = $.datepicker.formatDate('m/d/yy', date);           
+            var excludedDates = {{ excluded_dates_array | json }}.map(function(dateString) {
+                    return dateString.trim();
+                });
+          
+            // Check if the date is in the excluded dates list and Disable past dates and weekends
+            if ($.inArray(dateString, excludedDates) != -1 || day == 0 || day == 1 || day == 2 || day == 6 ) {
+                return [false];
+            }
+
+            // Allow Wednesdays (3), Thursdays (4), and Fridays (5)
+            if (day == 3 || day == 4 || day == 5) {
+                // Check the deadline conditions for Sunday and Monday
+                if ((currentDay == 0 && currentHour >= 18 && day == 3 && date.getTime() <= currentDate.getTime() + (3 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||                    
+                    (currentDay == 1 && currentHour >= 18 && day == 4 && date.getTime() <= currentDate.getTime() + (4 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 1 && currentHour >= 18 && day == 5 && date.getTime() <= currentDate.getTime() + (5 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 1 && day == 3 && date.getTime() <= currentDate.getTime() + (3 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 2 && day == 3 && date.getTime() <= currentDate.getTime() + (3 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 2 && day == 4 && date.getTime() <= currentDate.getTime() + (4 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 2 && day == 5 && date.getTime() <= currentDate.getTime() + (5 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 3 && day == 4 && date.getTime() <= currentDate.getTime() + (4 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 3 && day == 5 && date.getTime() <= currentDate.getTime() + (5 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000) ||
+                    (currentDay == 4 && day == 5 && date.getTime() <= currentDate.getTime() + (5 - currentDay + 7) % 7 * 24 * 60 * 60 * 1000)) {
+                    return [false];
+                }
+                return [true];
+            }
+
+            return [true];
+        },
+        minDate: +1, 
+        maxDate: '+2M' 
+    });
+});
+  
+</script>
+  
